@@ -243,9 +243,9 @@ export default function AuthPage({ initialMode = "login" }) {
   };
 
   return (
-    <main className="min-h-screen bg-[#000000] px-3 py-5 sm:px-5 lg:px-6">
-      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-[1360px] overflow-hidden rounded-[18px] border border-[#0b0b0b] bg-[#f3f4f2] shadow-[0_0_0_2px_rgba(255,255,255,0.08)]">
-        <section className="flex w-full flex-col justify-between bg-[#0c665f] px-7 py-7 text-white sm:px-8 lg:w-[46%] lg:px-9 lg:py-8">
+    <main className="min-h-screen bg-[#f3f4f2] sm:bg-[#000000] sm:px-5 sm:py-5 lg:px-6">
+      <div className="mx-auto flex min-h-screen max-w-[1360px] flex-col overflow-hidden bg-[#f3f4f2] lg:min-h-[calc(100vh-2.5rem)] lg:flex-row sm:rounded-[18px] sm:border sm:border-[#0b0b0b] sm:shadow-[0_0_0_2px_rgba(255,255,255,0.08)]">
+        <section className="flex w-full flex-col justify-between bg-[#0c665f] px-5 py-5 text-white sm:px-8 sm:py-7 lg:w-[46%] lg:px-9 lg:py-8">
           <div>
             <div className="flex items-center gap-3">
               <Image
@@ -261,11 +261,11 @@ export default function AuthPage({ initialMode = "login" }) {
               </div>
             </div>
 
-            <div className="mt-14 text-[11px] font-medium uppercase tracking-[0.28em] text-white/75">
+            <div className="mt-7 text-[10px] font-medium uppercase tracking-[0.2em] text-white/75 sm:mt-10 sm:text-[11px] sm:tracking-[0.28em] lg:mt-14">
               SPMB · Tahun ajaran 2027 / 2028
             </div>
 
-            <h1 className="mt-8 max-w-[520px] text-[3.5rem] font-black leading-[0.9] tracking-[-0.07em] text-white sm:text-[4.2rem]">
+            <h1 className="mt-4 max-w-[520px] text-[2.1rem] font-black leading-[0.96] tracking-[-0.06em] text-white sm:mt-6 sm:text-[3rem] lg:mt-8 lg:text-[4.2rem]">
               {mode === "register" ? "Mulai langkah pertama," : "Langkah awal SMK,"}
               <br />
               {mode === "register" ? "menuju masa depan" : "masa depan yang"}
@@ -273,13 +273,13 @@ export default function AuthPage({ initialMode = "login" }) {
               {mode === "register" ? "SMK." : "berarti."}
             </h1>
 
-            <p className="mt-8 max-w-[420px] text-base leading-7 text-white/75">
+            <p className="mt-3 max-w-[420px] text-sm leading-6 text-white/75 sm:mt-5 sm:text-base sm:leading-7 lg:mt-8">
               {mode === "register"
                 ? "Selamat datang di portal penerimaan calon siswa SMK Tadika Mesra Jakarta. Mulai proses pendaftaran dengan mudah dan terarah."
                 : "Selamat datang di portal penerimaan calon siswa baru SMK Tadika Mesra Jakarta. Mulai perjalanan belajar SMK dengan mudah dan terarah."}
             </p>
 
-            <div className="mt-9 space-y-3">
+            <div className="mt-9 hidden space-y-3 lg:block">
               <div className="overflow-hidden rounded-[22px] border border-white/20 bg-[#dfe8e3] shadow-[0_20px_38px_rgba(0,0,0,0.15)]">
                 <div
                   className="aspect-[1.3] w-full bg-cover bg-center"
@@ -311,7 +311,7 @@ export default function AuthPage({ initialMode = "login" }) {
             </div>
           </div>
 
-          <div className="mt-8 space-y-3 pb-1 text-sm text-white/80">
+          <div className="mt-8 hidden space-y-3 pb-1 text-sm text-white/80 lg:block">
             {perks.map((perk) => (
               <div key={perk} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[#d6f3ee]">
@@ -327,10 +327,10 @@ export default function AuthPage({ initialMode = "login" }) {
           </div>
         </section>
 
-        <section className="flex-1 bg-[#f5f6f4] px-6 py-7 text-[#123430] sm:px-8 lg:px-10 lg:py-8">
+        <section className="min-w-0 flex-1 bg-[#f5f6f4] px-4 py-6 text-[#123430] sm:px-8 sm:py-7 lg:px-10 lg:py-8">
           {mode === "register" ? (
             <form onSubmit={handleRegister}>
-              <div className="mx-auto flex max-w-[620px] flex-wrap items-center justify-between gap-3">
+              <div className="mx-auto flex max-w-[620px] flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Link
                   href="/"
                   className="inline-flex items-center gap-2 rounded-full border border-[#c7d4d1] bg-white/70 px-3.5 py-2 text-sm font-semibold text-[#123430] transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#5b9b95]"
@@ -340,7 +340,7 @@ export default function AuthPage({ initialMode = "login" }) {
                   </svg>
                   Kembali ke beranda
                 </Link>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end sm:gap-3">
                   <div className="text-[14px] text-[#1f4c4a]">Sudah punya akun?</div>
                   <button
                     type="button"
@@ -355,16 +355,16 @@ export default function AuthPage({ initialMode = "login" }) {
                 </div>
               </div>
 
-              <div className="mx-auto mt-7 max-w-[620px]">
+              <div className="mx-auto mt-6 max-w-[620px] sm:mt-7">
                 <div className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#1b5e5a]">
                   Akun calon siswa
                 </div>
 
-                <h2 className="text-[3rem] font-black leading-[1.02] tracking-[-0.06em] text-[#123631]">
+                <h2 className="text-[2.15rem] font-black leading-[1.02] tracking-[-0.06em] text-[#123631] sm:text-[3rem]">
                   Mulai pendaftaran SMK.
                 </h2>
 
-                <p className="mt-3 max-w-[560px] text-base leading-7 text-[#53706b]">
+                <p className="mt-3 max-w-[560px] text-sm leading-6 text-[#53706b] sm:text-base sm:leading-7">
                   Buat akun pelajar untuk mengikuti pendaftaran SMK. Orang tua atau wali dapat membantu mengisi pendaftaran.
                 </p>
 
@@ -385,7 +385,7 @@ export default function AuthPage({ initialMode = "login" }) {
                   </div>
                 ) : null}
 
-                <div className="mt-6 space-y-5">
+                <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[#23453f]">
                       Nama lengkap calon siswa <span className="text-[#1d6d65]">*</span>
@@ -553,7 +553,7 @@ export default function AuthPage({ initialMode = "login" }) {
             </form>
           ) : (
             <form onSubmit={handleLogin}>
-              <div className="mx-auto flex max-w-[620px] flex-wrap items-center justify-between gap-3">
+              <div className="mx-auto flex max-w-[620px] flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Link
                   href="/"
                   className="inline-flex items-center gap-2 rounded-full border border-[#c7d4d1] bg-white/70 px-3.5 py-2 text-sm font-semibold text-[#123430] transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#5b9b95]"
@@ -563,7 +563,7 @@ export default function AuthPage({ initialMode = "login" }) {
                   </svg>
                   Kembali ke beranda
                 </Link>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end sm:gap-3">
                   <div className="text-[14px] text-[#1f4c4a]">Belum punya akun?</div>
                   <button
                     type="button"
@@ -578,26 +578,26 @@ export default function AuthPage({ initialMode = "login" }) {
                 </div>
               </div>
 
-              <div className="mx-auto mt-7 max-w-[620px]">
+              <div className="mx-auto mt-6 max-w-[620px] sm:mt-7">
                 <div className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-[#1b5e5a]">
                   Selamat datang kembali
                 </div>
 
-                <h2 className="text-[3rem] font-black leading-[1.02] tracking-[-0.06em] text-[#123631]">
+                <h2 className="text-[2.15rem] font-black leading-[1.02] tracking-[-0.06em] text-[#123631] sm:text-[3rem]">
                   Masuk ke portal penerimaan SMK.
                 </h2>
 
-                <p className="mt-3 max-w-[560px] text-base leading-7 text-[#53706b]">
+                <p className="mt-3 max-w-[560px] text-sm leading-6 text-[#53706b] sm:text-base sm:leading-7">
                   Pilih jenis akun Anda dan lanjutkan proses penerimaan calon siswa SMK.
                 </p>
 
-                <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                <div className="mt-6 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-4">
                   {roleList.map((item) => (
                     <button
                       type="button"
                       key={item.key}
                       onClick={() => setSelectedRole(item.key)}
-                      className={`flex h-[108px] flex-col items-center justify-center rounded-xl border text-center transition ${
+                      className={`flex h-[88px] flex-col items-center justify-center rounded-xl border text-center transition sm:h-[108px] ${
                         selectedRole === item.key
                           ? "border-[#6bb4a8] bg-[#eaf7f3] text-[#0a544f] shadow-[0_0_0_1px_rgba(74,154,138,0.25)]"
                           : "border-[#d8e0dd] bg-white text-[#123430] hover:bg-[#f5f8f7]"
@@ -629,7 +629,7 @@ export default function AuthPage({ initialMode = "login" }) {
                   </div>
                 ) : null}
 
-                <div className="mt-7 space-y-5">
+                <div className="mt-5 space-y-4 sm:mt-7 sm:space-y-5">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[#23453f]">Alamat email</label>
                     <div className="relative">
