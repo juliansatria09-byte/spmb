@@ -34,6 +34,11 @@ export function usePortalActivity() {
   const [events, setEvents] = useState([]);
   const [error, setError] = useState("");
 
+  const addEvent = (event) => {
+    setEvents((current) => [...current.filter((item) => Number(item.id) !== Number(event.id)), event]
+      .sort((a, b) => Number(a.id) - Number(b.id)));
+  };
+
   useEffect(() => {
     let active = true;
     let latestId = 0;
@@ -73,5 +78,5 @@ export function usePortalActivity() {
     };
   }, []);
 
-  return { events, error };
+  return { events, error, addEvent };
 }

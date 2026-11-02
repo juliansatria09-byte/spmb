@@ -79,6 +79,59 @@ export async function POST(request) {
     return Response.json({ success: false, message: "Rincian aktivitas tidak valid." }, { status: 400 });
   }
 
+  if (body.eventType === "profile_updated") {
+    const userIdMatch = /^student-(\d+)$/.exec(session.id);
+    const phone = typeof body.payload.phone === "string" ? body.payload.phone.trim() : "";
+    const phoneDigits = phone.replace(/\D/g, "");
+    const parentName = typeof body.payload.parentName === "string" ? body.payload.parentName.trim() : "";
+    const program = typeof body.payload.program === "string" ? body.payload.program.trim() : "";
+
+    if (!userIdMatch || !phone || phone.length > 20 || phoneDigits.length < 6 || phoneDigits.length > 15
+        || !/^[+()\d\s.-]+$/.test(phone)) {
+      return Response.json({ success: false, message: "Nomor WhatsApp tidak valid." }, { status: 400 });
+    }
+    if (!parentName || parentName.length > 120 || !program || program.length > 120) {
+      return Response.json({ success: false, message: "Nama wali dan program pilihan wajib diisi (maksimal 120 karakter)." }, { status: 400 });
+    }
+
+    let connection;
+    try {
+      await ensurePortalActivityTable();
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      const [users] = await connection.execute(
+        `SELECT u.full_name AS name, u.email
+         FROM users u JOIN roles r ON r.id = u.role_id
+         WHERE u.id = ? AND r.slug = 'pelajar' LIMIT 1`,
+        [Number(userIdMatch[1])],
+      );
+      if (!users.length) {
+        await connection.rollback();
+        return Response.json({ success: false, message: "Akun pelajar tidak ditemukan." }, { status: 404 });
+      }
+
+      const user = users[0];
+      const payload = { name: user.name, email: user.email, phone, parentName, program };
+      await connection.execute("UPDATE users SET phone = ? WHERE id = ?", [phone, Number(userIdMatch[1])]);
+      const [result] = await connection.execute(
+        "INSERT INTO portal_activity (actor_role, event_type, entity_id, summary, payload) VALUES (?, ?, ?, ?, ?)",
+        [session.role, body.eventType, body.entityId.trim(), `Data pendaftaran diperbarui: ${user.name}`, JSON.stringify(payload)],
+      );
+      const [rows] = await connection.execute(
+        "SELECT id, actor_role AS actorRole, event_type AS eventType, entity_id AS entityId, summary, payload, created_at AS createdAt FROM portal_activity WHERE id = ?",
+        [result.insertId],
+      );
+      await connection.commit();
+      return Response.json({ success: true, event: rows[0] }, { status: 201 });
+    } catch (error) {
+      if (connection) await connection.rollback();
+      console.error("Perubahan data pendaftaran tidak dapat disimpan.", error);
+      return Response.json({ success: false, message: "Perubahan gagal disimpan ke akun sekolah." }, { status: 503 });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
   try {
     await ensurePortalActivityTable();
     const [result] = await db.execute(

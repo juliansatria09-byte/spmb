@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { clearSession, roleConfig } from "@/app/lib/auth";
 import { usePersistentState } from "@/app/lib/use-persistent-state";
 import { getStudentDocument, saveStudentDocument } from "@/app/lib/student-document-storage";
-import { publishPortalActivity, uploadPortalDocument } from "@/app/lib/portal-activity-client";
+import { publishPortalActivity, uploadPortalDocument, usePortalActivity } from "@/app/lib/portal-activity-client";
 
 const navigation = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/pelajar" },
@@ -133,15 +133,52 @@ function SectionContent({ section, user }) {
   const [readAnnouncementIds, setReadAnnouncementIds] = usePersistentState(`spmb-student-read-announcements:${user.id}`, []);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileDraft, setProfileDraft] = useState(initialProfile);
+  const { events: portalEvents, addEvent } = usePortalActivity();
   const [announcementCategory, setAnnouncementCategory] = useState("Semua kategori");
   const [notice, setNotice] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const completeDocuments = documentRows.filter((document) => document.status === "Terverifikasi").length;
 
+  useEffect(() => {
+    if (editingProfile) return;
+    const ownEvents = portalEvents.filter((item) => item.entityId === `student:${user.id}`);
+    if (!ownEvents.length) return;
+
+    const savedProfile = { phone: "", parent: "", program: "" };
+    ownEvents.forEach((item) => {
+      let payload = item.payload;
+      if (typeof payload === "string") {
+        try {
+          payload = JSON.parse(payload);
+        } catch (error) {
+          console.error("Data profil tersimpan memiliki format yang tidak valid.", error);
+          return;
+        }
+      }
+      if (!payload || typeof payload !== "object") return;
+      if (payload.phone) savedProfile.phone = payload.phone;
+      if (payload.parentName) savedProfile.parent = payload.parentName;
+      if (payload.program) savedProfile.program = payload.program;
+    });
+
+    if (!savedProfile.phone && !savedProfile.parent && !savedProfile.program) return;
+    setProfile((current) => {
+      const next = {
+        ...current,
+        phone: savedProfile.phone || current.phone,
+        parent: savedProfile.parent || current.parent,
+        program: savedProfile.program || current.program,
+      };
+      return next.phone === current.phone && next.parent === current.parent && next.program === current.program
+        ? current
+        : next;
+    });
+  }, [editingProfile, portalEvents, setProfile, user.id]);
+
   const saveProfileChanges = async (event) => {
     event.preventDefault();
     try {
-      await publishPortalActivity({
+      const savedEvent = await publishPortalActivity({
         actorRole: "pelajar",
         eventType: "profile_updated",
         entityId: `student:${user.id}`,
@@ -154,9 +191,10 @@ function SectionContent({ section, user }) {
           program: profileDraft.program,
         },
       });
+      addEvent(savedEvent);
       setProfile(profileDraft);
       setEditingProfile(false);
-      setNotice("Perubahan tersimpan dan telah dikirim ke Admin serta Kepala Sekolah.");
+      setNotice("Perubahan tersimpan di akun dan telah dikirim ke Admin serta Kepala Sekolah.");
     } catch (error) {
       console.error("Perubahan data pendaftaran tidak dapat disinkronkan.", error);
       setNotice(`${error.message} Data belum diperbarui.`);
@@ -275,7 +313,7 @@ function SectionContent({ section, user }) {
               ))}
             </div>}
           <div className="mt-5 rounded-2xl border border-[#dcefe9] bg-[#f1faf6] p-4 text-sm leading-6 text-[#41645d]">
-            Kontak, nama wali, dan pilihan program tersimpan di browser ini. Untuk mengubah data formulir resmi, hubungi panitia SPMB.
+            Perubahan tersimpan di akun dan diteruskan ke Admin serta Kepala Sekolah untuk ditinjau.
           </div>
           <div className="mt-4 flex flex-wrap gap-2">{editingProfile ? <><button type="submit" className="rounded-lg bg-[#087f71] px-4 py-2 text-xs font-bold text-white">Simpan perubahan</button><button type="button" onClick={() => { setProfileDraft(profile); setEditingProfile(false); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#52716a]">Batal</button></> : <button type="button" onClick={() => { setProfileDraft(profile); setEditingProfile(true); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#087f71]">Ubah data kontak</button>}</div>
           {notice ? <p role="status" className="mt-3 text-xs text-[#078675]">{notice}</p> : null}
