@@ -543,6 +543,8 @@ function AdminContent({ section, onExport }) {
       sharedEvents.filter((event) => event.entityId === registration.entityId).forEach((event) => {
         const update = typeof event.payload === "string" ? JSON.parse(event.payload) : event.payload;
         if (event.eventType === "document_uploaded") student.document = "Menunggu verifikasi";
+        if (update.name) student.name = update.name;
+        if (update.email) student.email = update.email;
         if (update.phone) student.phone = update.phone;
         if (update.parentName) student.parent = update.parentName;
         if (update.program) student.program = update.program;
@@ -550,6 +552,7 @@ function AdminContent({ section, onExport }) {
         if (update.payment) student.payment = update.payment;
         if (update.amount) student.amount = update.amount;
       });
+      student.initials = student.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
       return student;
     }), [sharedEvents]);
   const allApplicantRows = useMemo(() => [...liveApplicants, ...applicantRows], [applicantRows, liveApplicants]);

@@ -191,6 +191,7 @@ function PrincipalContent({ section, year, setYear }) {
       sharedEvents.filter((event) => event.entityId === registration.entityId).forEach((event) => {
         const update = typeof event.payload === "string" ? JSON.parse(event.payload) : event.payload;
         if (event.eventType === "document_uploaded") student.documents = "Menunggu verifikasi";
+        if (update.name) student.name = update.name;
         if (update.document) student.documents = update.document;
         if (update.decision) student.decision = update.decision;
         if (update.program) student.program = update.program;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { clearSession, roleConfig } from "@/app/lib/auth";
+import { clearSession, roleConfig, saveSession } from "@/app/lib/auth";
 import { usePersistentState } from "@/app/lib/use-persistent-state";
 import { getStudentDocument, saveStudentDocument } from "@/app/lib/student-document-storage";
 import { publishPortalActivity, uploadPortalDocument, usePortalActivity } from "@/app/lib/portal-activity-client";
@@ -16,6 +16,13 @@ const navigation = [
   { id: "jadwal-kegiatan", label: "Jadwal kegiatan", icon: "calendar", href: "/pelajar/jadwal-kegiatan" },
   { id: "pembayaran", label: "Pembayaran", icon: "wallet", href: "/pelajar/pembayaran" },
   { id: "pengumuman", label: "Pengumuman", icon: "megaphone", href: "/pelajar/pengumuman" },
+];
+
+const studentPrograms = [
+  "Teknik Komputer & Jaringan",
+  "Akuntansi & Keuangan Lembaga",
+  "Multimedia",
+  "Farmasi Industri",
 ];
 
 const titles = {
@@ -134,6 +141,7 @@ function SectionContent({ section, user }) {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileDraft, setProfileDraft] = useState(initialProfile);
   const { events: portalEvents, addEvent } = usePortalActivity();
+  const [savingProfile, setSavingProfile] = useState(false);
   const [announcementCategory, setAnnouncementCategory] = useState("Semua kategori");
   const [notice, setNotice] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
@@ -144,7 +152,7 @@ function SectionContent({ section, user }) {
     const ownEvents = portalEvents.filter((item) => item.entityId === `student:${user.id}`);
     if (!ownEvents.length) return;
 
-    const savedProfile = { phone: "", parent: "", program: "" };
+    const savedProfile = { name: "", email: "", phone: "", parent: "", program: "" };
     ownEvents.forEach((item) => {
       let payload = item.payload;
       if (typeof payload === "string") {
@@ -156,20 +164,25 @@ function SectionContent({ section, user }) {
         }
       }
       if (!payload || typeof payload !== "object") return;
+      if (payload.name) savedProfile.name = payload.name;
+      if (payload.email) savedProfile.email = payload.email;
       if (payload.phone) savedProfile.phone = payload.phone;
       if (payload.parentName) savedProfile.parent = payload.parentName;
       if (payload.program) savedProfile.program = payload.program;
     });
 
-    if (!savedProfile.phone && !savedProfile.parent && !savedProfile.program) return;
+    if (!savedProfile.name && !savedProfile.email && !savedProfile.phone && !savedProfile.parent && !savedProfile.program) return;
     setProfile((current) => {
       const next = {
         ...current,
+        name: savedProfile.name || current.name,
+        email: savedProfile.email || current.email,
         phone: savedProfile.phone || current.phone,
         parent: savedProfile.parent || current.parent,
         program: savedProfile.program || current.program,
       };
-      return next.phone === current.phone && next.parent === current.parent && next.program === current.program
+      return next.name === current.name && next.email === current.email && next.phone === current.phone
+        && next.parent === current.parent && next.program === current.program
         ? current
         : next;
     });
@@ -177,15 +190,16 @@ function SectionContent({ section, user }) {
 
   const saveProfileChanges = async (event) => {
     event.preventDefault();
+    setSavingProfile(true);
     try {
       const savedEvent = await publishPortalActivity({
         actorRole: "pelajar",
         eventType: "profile_updated",
         entityId: `student:${user.id}`,
-        summary: `Data pendaftaran diperbarui: ${profile.name}`,
+        summary: `Data pendaftaran diperbarui: ${profileDraft.name}`,
         payload: {
-          name: profile.name,
-          email: profile.email,
+          name: profileDraft.name,
+          email: profileDraft.email,
           phone: profileDraft.phone,
           parentName: profileDraft.parent,
           program: profileDraft.program,
@@ -193,11 +207,14 @@ function SectionContent({ section, user }) {
       });
       addEvent(savedEvent);
       setProfile(profileDraft);
+      saveSession({ ...user, ...profileDraft });
       setEditingProfile(false);
       setNotice("Perubahan tersimpan di akun dan telah dikirim ke Admin serta Kepala Sekolah.");
     } catch (error) {
       console.error("Perubahan data pendaftaran tidak dapat disinkronkan.", error);
       setNotice(`${error.message} Data belum diperbarui.`);
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -300,10 +317,12 @@ function SectionContent({ section, user }) {
           <form onSubmit={saveProfileChanges}>
             {editingProfile ? <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {[
+                ["name", "Nama lengkap", { autoComplete: "name", maxLength: 120 }],
+                ["email", "Alamat email", { type: "email", autoComplete: "email", maxLength: 120 }],
                 ["phone", "Nomor WhatsApp"],
                 ["parent", "Nama orang tua / wali"],
-                ["program", "Program pilihan"],
-              ].map(([field, label]) => <label key={field} className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">{label}<input required value={profileDraft[field]} onChange={(event) => setProfileDraft((current) => ({ ...current, [field]: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]" /></label>)}
+              ].map(([field, label, inputProps = {}]) => <label key={field} className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">{label}<input {...inputProps} required value={profileDraft[field]} onChange={(event) => setProfileDraft((current) => ({ ...current, [field]: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]" /></label>)}
+              <label className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">Program pilihan<select required value={studentPrograms.includes(profileDraft.program) ? profileDraft.program : ""} onChange={(event) => setProfileDraft((current) => ({ ...current, program: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]"><option value="">Pilih program</option>{studentPrograms.map((program) => <option key={program} value={program}>{program}</option>)}</select></label>
             </div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {fields.map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-[#f7faf9] p-4">
@@ -315,8 +334,8 @@ function SectionContent({ section, user }) {
           <div className="mt-5 rounded-2xl border border-[#dcefe9] bg-[#f1faf6] p-4 text-sm leading-6 text-[#41645d]">
             Perubahan tersimpan di akun dan diteruskan ke Admin serta Kepala Sekolah untuk ditinjau.
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">{editingProfile ? <><button type="submit" className="rounded-lg bg-[#087f71] px-4 py-2 text-xs font-bold text-white">Simpan perubahan</button><button type="button" onClick={() => { setProfileDraft(profile); setEditingProfile(false); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#52716a]">Batal</button></> : <button type="button" onClick={() => { setProfileDraft(profile); setEditingProfile(true); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#087f71]">Ubah data kontak</button>}</div>
-          {notice ? <p role="status" className="mt-3 text-xs text-[#078675]">{notice}</p> : null}
+          <div className="mt-4 flex flex-wrap gap-2">{editingProfile ? <><button type="submit" disabled={savingProfile} className="rounded-lg bg-[#087f71] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">{savingProfile ? "Menyimpan..." : "Simpan perubahan"}</button><button type="button" disabled={savingProfile} onClick={() => { setProfileDraft(profile); setEditingProfile(false); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#52716a] disabled:opacity-60">Batal</button></> : <button type="button" onClick={() => { setProfileDraft(profile); setEditingProfile(true); }} className="rounded-lg border border-[#dfe9e5] px-4 py-2 text-xs font-bold text-[#087f71]">Ubah data pendaftaran</button>}</div>
+          {notice ? <p role="status" className={`mt-3 text-xs ${notice.includes("tersimpan") ? "text-[#078675]" : "text-[#a34526]"}`}>{notice}</p> : null}
           </form>
         </Panel>
         <Panel>
