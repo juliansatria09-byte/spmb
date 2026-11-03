@@ -46,6 +46,14 @@ async function initDatabase() {
           ('Kepala Sekolah', 'kepala')
         ON DUPLICATE KEY UPDATE name = VALUES(name), slug = VALUES(slug)`,
       );
+      await connection.query(
+        `INSERT INTO programs (name, description, capacity, is_active) VALUES
+          ('Rekayasa Perangkat Lunak', 'Program keahlian rekayasa perangkat lunak', 0, 1),
+          ('Desain Komunikasi Visual', 'Program keahlian desain komunikasi visual', 0, 1),
+          ('Manajemen Perkantoran', 'Program keahlian manajemen perkantoran', 0, 1),
+          ('Kuliner', 'Program keahlian kuliner', 0, 1)
+        ON DUPLICATE KEY UPDATE description = VALUES(description), is_active = 1`,
+      );
       console.log(`Schema database ${database} berhasil disiapkan.`);
     } else {
       const seedSql = fs.readFileSync(seedPath, 'utf8');

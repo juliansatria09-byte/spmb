@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import db from "@/app/lib/db";
 import { applySessionCookie, clearSessionCookie } from "@/app/lib/server-session";
 import { ensurePortalActivityTable } from "@/app/lib/portal-activity-schema";
+import { availablePrograms } from "@/app/lib/programs";
 
 const scrypt = promisify(scryptCallback);
 
@@ -28,6 +29,9 @@ function validateRegistration(body) {
   }
   if (typeof body.parentName !== "string" || !body.parentName.trim() || body.parentName.trim().length > 120) {
     return "Nama orang tua/wali wajib diisi (maksimal 120 karakter).";
+  }
+  if (typeof body.program !== "string" || !availablePrograms.includes(body.program)) {
+    return "Pilih salah satu jurusan yang tersedia.";
   }
   if (typeof body.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
     return "Masukkan alamat email yang valid.";
@@ -75,6 +79,14 @@ export async function POST(request) {
         await connection.rollback();
         return Response.json({ success: false, message: "Peran pelajar belum tersedia di database." }, { status: 503 });
       }
+      const [programs] = await connection.execute(
+        "SELECT id FROM programs WHERE name = ? AND is_active = 1 LIMIT 1",
+        [body.program],
+      );
+      if (!programs.length) {
+        await connection.rollback();
+        return Response.json({ success: false, message: "Jurusan belum tersedia di database. Silakan coba lagi nanti." }, { status: 503 });
+      }
 
       const email = body.email.trim().toLowerCase();
       const passwordHash = await hashPassword(body.password);
@@ -82,6 +94,7 @@ export async function POST(request) {
         "INSERT INTO users (role_id, full_name, email, password_hash, phone, school_name) VALUES (?, ?, ?, ?, ?, ?)",
         [roles[0].id, body.name.trim(), email, passwordHash, body.phone.trim(), "SMK Tadika Mesra Jakarta"],
       );
+      const registrationNumber = `SMK-2027-${String(userResult.insertId).padStart(6, "0")}`;
       const user = {
         id: `student-${userResult.insertId}`,
         role: "pelajar",
@@ -89,7 +102,14 @@ export async function POST(request) {
         email,
         phone: body.phone.trim(),
         school: "SMK Tadika Mesra Jakarta",
+        registrationNumber,
+        parentName: body.parentName.trim(),
+        program: body.program,
       };
+      await connection.execute(
+        "INSERT INTO applications (user_id, program_id, registration_number, parent_name, birth_date) VALUES (?, ?, ?, ?, ?)",
+        [userResult.insertId, programs[0].id, registrationNumber, body.parentName.trim(), body.birthDate],
+      );
       await connection.execute(
         "INSERT INTO portal_activity (actor_role, event_type, entity_id, summary, payload) VALUES ('pelajar', 'applicant_created', ?, ?, ?)",
         [`student:${user.id}`, `Pendaftaran baru: ${user.name}`, JSON.stringify({
@@ -98,7 +118,7 @@ export async function POST(request) {
           phone: user.phone,
           parentName: body.parentName.trim(),
           birthDate: body.birthDate,
-          program: "Belum dipilih",
+          program: body.program,
         })],
       );
       await connection.commit();
@@ -123,7 +143,10 @@ export async function POST(request) {
   try {
     const [rows] = await db.execute(
       `SELECT u.id, u.full_name AS name, u.email, u.password_hash AS passwordHash,
-              u.phone, u.school_name AS school, r.slug AS role
+              u.phone, u.school_name AS school, r.slug AS role,
+              (SELECT a.registration_number FROM applications a WHERE a.user_id = u.id ORDER BY a.id DESC LIMIT 1) AS registrationNumber,
+              (SELECT a.parent_name FROM applications a WHERE a.user_id = u.id ORDER BY a.id DESC LIMIT 1) AS parentName,
+              (SELECT p.name FROM applications a JOIN programs p ON p.id = a.program_id WHERE a.user_id = u.id ORDER BY a.id DESC LIMIT 1) AS program
        FROM users u JOIN roles r ON r.id = u.role_id
        WHERE u.email = ? AND r.slug = ? LIMIT 1`,
       [body.email.trim().toLowerCase(), body.role],
@@ -143,6 +166,9 @@ export async function POST(request) {
       email: account.email,
       phone: account.phone || "",
       school: account.school || "SMK Tadika Mesra Jakarta",
+      registrationNumber: account.registrationNumber || "",
+      parentName: account.parentName || "",
+      program: account.program || "",
     };
     return applySessionCookie(Response.json({ success: true, user }), user);
   } catch (error) {

@@ -9,6 +9,7 @@ import {
   roleConfig,
   saveSession,
 } from "@/app/lib/auth";
+import { availablePrograms } from "@/app/lib/programs";
 
 function CheckIcon() {
   return (
@@ -83,6 +84,7 @@ const defaultRegisterState = {
   name: "",
   birthDate: "",
   parentName: "",
+  program: "",
   email: "",
   phone: "",
   password: "",
@@ -175,6 +177,10 @@ export default function AuthPage({ initialMode = "login" }) {
       setRegisterMessage("Lengkapi nama calon siswa, nama orang tua/wali, dan nomor WhatsApp.");
       return;
     }
+    if (!availablePrograms.includes(registerForm.program)) {
+      setRegisterMessage("Pilih salah satu jurusan yang tersedia.");
+      return;
+    }
 
     if (!registerForm.birthDate) {
       setRegisterMessage("Pilih tanggal lahir pelajar yang valid.");
@@ -221,6 +227,7 @@ export default function AuthPage({ initialMode = "login" }) {
           name: registerForm.name,
           birthDate: registerForm.birthDate,
           parentName: registerForm.parentName,
+          program: registerForm.program,
           email,
           phone: registerForm.phone,
           password: registerForm.password,
@@ -396,6 +403,23 @@ export default function AuthPage({ initialMode = "login" }) {
                       className="h-12 w-full rounded-md border border-[#d8e0dd] bg-white px-3 text-[15px] text-[#183b38] placeholder:text-[#7d8e8a] focus:border-[#5b9b95] focus:outline-none"
                       placeholder="Nama sesuai akta kelahiran atau ijazah"
                     />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-[#23453f]">
+                      Jurusan pilihan <span className="text-[#1d6d65]">*</span>
+                    </label>
+                    <select
+                      value={registerForm.program}
+                      onChange={updateRegisterField("program")}
+                      required
+                      className="h-12 w-full rounded-md border border-[#d8e0dd] bg-white px-3 text-[15px] text-[#183b38] focus:border-[#5b9b95] focus:outline-none"
+                    >
+                      <option value="">Pilih jurusan</option>
+                      {availablePrograms.map((program) => (
+                        <option key={program} value={program}>{program}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="grid gap-5 sm:grid-cols-2">

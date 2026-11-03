@@ -14,7 +14,11 @@ INSERT INTO programs (name, description, capacity, is_active) VALUES
   ('Teknik Komputer & Jaringan', 'Program unggulan teknik komputer dan jaringan', 180, 1),
   ('Akuntansi & Keuangan Lembaga', 'Program unggulan akuntansi dan administrasi keuangan', 150, 1),
   ('Multimedia', 'Program desain komunikasi visual multimedia', 120, 1),
-  ('Farmasi Industri', 'Program farmasi industri dan produk kesehatan', 90, 1)
+  ('Farmasi Industri', 'Program farmasi industri dan produk kesehatan', 90, 1),
+  ('Rekayasa Perangkat Lunak', 'Program keahlian rekayasa perangkat lunak', 0, 1),
+  ('Desain Komunikasi Visual', 'Program keahlian desain komunikasi visual', 0, 1),
+  ('Manajemen Perkantoran', 'Program keahlian manajemen perkantoran', 0, 1),
+  ('Kuliner', 'Program keahlian kuliner', 0, 1)
 ON DUPLICATE KEY UPDATE description = VALUES(description), capacity = VALUES(capacity), is_active = VALUES(is_active);
 
 INSERT INTO applications (user_id, program_id, registration_number, parent_name, birth_date, status, application_step, notes) VALUES

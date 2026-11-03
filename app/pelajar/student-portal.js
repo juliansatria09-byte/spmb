@@ -8,6 +8,7 @@ import { clearSession, roleConfig, saveSession } from "@/app/lib/auth";
 import { usePersistentState } from "@/app/lib/use-persistent-state";
 import { getStudentDocument, saveStudentDocument } from "@/app/lib/student-document-storage";
 import { publishPortalActivity, uploadPortalDocument, usePortalActivity } from "@/app/lib/portal-activity-client";
+import { availablePrograms } from "@/app/lib/programs";
 
 const navigation = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/pelajar" },
@@ -16,13 +17,6 @@ const navigation = [
   { id: "jadwal-kegiatan", label: "Jadwal kegiatan", icon: "calendar", href: "/pelajar/jadwal-kegiatan" },
   { id: "pembayaran", label: "Pembayaran", icon: "wallet", href: "/pelajar/pembayaran" },
   { id: "pengumuman", label: "Pengumuman", icon: "megaphone", href: "/pelajar/pengumuman" },
-];
-
-const studentPrograms = [
-  "Teknik Komputer & Jaringan",
-  "Akuntansi & Keuangan Lembaga",
-  "Multimedia",
-  "Farmasi Industri",
 ];
 
 const titles = {
@@ -131,8 +125,9 @@ function SectionContent({ section, user }) {
     name: user.name,
     email: user.email,
     phone: user.phone || "",
-    parent: "Sukmawati",
-    program: "Teknik Komputer & Jaringan",
+    parent: user.parentName || "Belum diisi",
+    program: user.program || "Belum dipilih",
+    registrationNumber: user.registrationNumber || "Belum tersedia",
   };
   const [profile, setProfile] = usePersistentState(`spmb-student-profile:${user.id}`, initialProfile);
   const [documentRows, setDocumentRows] = usePersistentState(`spmb-student-documents:${user.id}`, documents);
@@ -300,7 +295,7 @@ function SectionContent({ section, user }) {
 
   if (section === "data-pendaftaran") {
     const fields = [
-      ["Nomor pendaftaran", "SMK-2027-0142"],
+      ["Nomor pendaftaran", profile.registrationNumber],
       ["Nama lengkap", profile.name],
       ["Alamat email", profile.email],
       ["Nomor WhatsApp", profile.phone || "Belum ditambahkan"],
@@ -322,7 +317,7 @@ function SectionContent({ section, user }) {
                 ["phone", "Nomor WhatsApp"],
                 ["parent", "Nama orang tua / wali"],
               ].map(([field, label, inputProps = {}]) => <label key={field} className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">{label}<input {...inputProps} required value={profileDraft[field]} onChange={(event) => setProfileDraft((current) => ({ ...current, [field]: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]" /></label>)}
-              <label className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">Program pilihan<select required value={studentPrograms.includes(profileDraft.program) ? profileDraft.program : ""} onChange={(event) => setProfileDraft((current) => ({ ...current, program: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]"><option value="">Pilih program</option>{studentPrograms.map((program) => <option key={program} value={program}>{program}</option>)}</select></label>
+              <label className="rounded-2xl bg-[#f7faf9] p-4 text-[11px] font-medium text-[#788b88]">Program pilihan<select required value={availablePrograms.includes(profileDraft.program) ? profileDraft.program : ""} onChange={(event) => setProfileDraft((current) => ({ ...current, program: event.target.value }))} className="mt-1.5 block w-full rounded-lg border border-[#dfe9e5] bg-white px-3 py-2 text-sm font-semibold text-[#173c38]"><option value="">Pilih program</option>{availablePrograms.map((program) => <option key={program} value={program}>{program}</option>)}</select></label>
             </div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {fields.map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-[#f7faf9] p-4">

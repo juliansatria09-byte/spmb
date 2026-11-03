@@ -1,6 +1,7 @@
 import db from "@/app/lib/db";
 import { ensurePortalActivityTable } from "@/app/lib/portal-activity-schema";
 import { applySessionCookie, readServerSession } from "@/app/lib/server-session";
+import { availablePrograms } from "@/app/lib/programs";
 
 const eventTypes = new Set([
   "profile_updated",
@@ -95,8 +96,8 @@ export async function POST(request) {
         || !/^[+()\d\s.-]+$/.test(phone)) {
       return Response.json({ success: false, message: "Nomor WhatsApp tidak valid." }, { status: 400 });
     }
-    if (!parentName || parentName.length > 120 || !program || program.length > 120) {
-      return Response.json({ success: false, message: "Nama wali dan program pilihan wajib diisi (maksimal 120 karakter)." }, { status: 400 });
+    if (!parentName || parentName.length > 120 || !availablePrograms.includes(program)) {
+      return Response.json({ success: false, message: "Nama wali wajib diisi dan pilih jurusan yang tersedia." }, { status: 400 });
     }
 
     let connection;
